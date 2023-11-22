@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "snake"
 include(":app")
- 
+include(":app:GamEducationLibrary")

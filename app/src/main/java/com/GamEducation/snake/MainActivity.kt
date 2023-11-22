@@ -18,6 +18,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import com.gameducation.gameducationlibrary.GamEducationLibrary
 
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -31,6 +32,9 @@ import kotlin.math.sqrt
 
 
 class MainActivity : Activity(),SharedPreferencesUpdateListener {
+
+    var gamEducationLibrary: GamEducationLibrary? = null
+
     var localJogo = "new_game";
     var orderedItemOrder = 0
     var corretaOuVista = false;
@@ -38,65 +42,41 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
     var delayMillis = 30L // Update snake position every 100 milliseconds
     var scorex = 0
     var currentDirection = "right" // Start moving right by default
-    var codigoAcesso = "";
-    var codigo_acesso = 0;
     val correct = 0
     val percentage = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
+        setContentView(R.layout.activity_gam_education)
 
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "codigo_acesso") {
-                // Check if the "codigo_acesso" preference has changed
-                val newCodigoAcesso = sharedPreferences.getInt("codigo_acesso", 0)
+        val accessCodeWebView = findViewById<WebView>(R.id.webView)
+        gamEducationLibrary = GamEducationLibrary(this, accessCodeWebView)
 
-                if (newCodigoAcesso != 0) {
-                    // "codigo_acesso" has changed, recreate the activity
-                    editor.apply() // Save any other changes to preferences
-                    recreate() // Recreate the activity
-                }
-            }
+        if(gamEducationLibrary?.isSavedCodigoAcesso(this) == true){
+
+                comecarJogo(this)
+            }else{
+            gamEducationLibrary?.showAccessCodeInputPage()
+
+
+            recreate()
         }
-        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
-
-        val serializedData = delayMillis
-        codigo_acesso = sharedPreferences.getInt("codigo_acesso", 0)
-        localJogo = sharedPreferences.getString("localJogo","new_game").toString()
 
 
-        if (codigo_acesso == 0) {
-            setContentView(R.layout.activity_codigo_acesso)
 
 
-            val codigoAcessoEditText = findViewById<EditText>(R.id.editTextCodigoAcesso)
-
-            val submitButtonCodigo = findViewById<Button>(R.id.buttonSubmit)
-
-            submitButtonCodigo.setOnClickListener {
-                codigoAcesso = codigoAcessoEditText.text.toString()
-                codigo_acesso = 0;
-                codigo_acesso = codigoAcesso.toInt();
-
-                // Perform network operations in an AsyncTask
-                VerificaCodigoAcessoAsyncTask().execute(codigo_acesso)
 
 
-                if (localJogo == "start_game") {
-                    val sharedPreferences =
-                        getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+    }
 
-                    sharedPreferences.edit().putInt("codigo_acesso", codigo_acesso).apply()
 
-                    recreate()
-                } else {
-                    recreate()
+    fun comecarJogo(context: Context){
+            Log.d("casa", "true")
+        setContentView(R.layout.activity_main)
 
-                }
-            }
-        } else{
-            setContentView(R.layout.activity_main)
+
+
+
 
         val board = findViewById<RelativeLayout>(R.id.board)
         val border = findViewById<RelativeLayout>(R.id.relativeLayout)
@@ -155,7 +135,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             // Clear the board before adding elements
             board.removeAllViews()
 
-            sharedPreferences.edit().putInt("codigo_acesso",codigo_acesso).apply()
+
 
             logOffButton.visibility = View.INVISIBLE
             board.visibility = View.VISIBLE
@@ -581,20 +561,6 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
 
 
-            val logOffButton = findViewById<Button>(R.id.logOffButton)
-
-            logOffButton.setOnClickListener {
-                // Clear the saved variables in SharedPreferences
-                val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
-                val editor = sharedPreferences.edit()
-                sharedPreferences.edit().putInt("codigo_acesso",0).apply()
-                editor.clear()
-                editor.apply()
-
-                // Restart the activity
-                restartActivity()
-            }
-
 
 
             meat.setImageResource(R.drawable.food)
@@ -667,7 +633,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         continueButton.setOnClickListener {
             showContinueDialog()
         }
-    }
+
     }
     private fun restartActivity() {
         val intent = Intent(this, this::class.java)
@@ -686,7 +652,20 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             // based on the current state of the game.
             orderedItemOrder ++
             localJogo = "resume_game"
-            returnToGamEducation(orderedItemOrder)
+
+            val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+            val editor = sharedPreferences.edit()
+
+            editor.putString("currentDirection", currentDirection)
+            editor.putLong("delayMillis", delayMillis)
+            editor.putInt("score", scorex)
+            editor.apply()
+
+
+            setContentView(R.layout.activity_gam_education)
+
+
+            val webView = findViewById<WebView>(R.id.webView)
 
 
         }
@@ -706,91 +685,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         builder.show()
     }
 
-    private fun returnToGamEducation(orderedItemOrder: Int) {
 
-        val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-
-        editor.putString("currentDirection", currentDirection)
-        editor.putLong("delayMillis", delayMillis)
-        editor.putInt("score", scorex)
-
-        editor.apply()
-
-
-        setContentView(R.layout.activity_gam_education)
-
-
-        val webView = findViewById<WebView>(R.id.webView)
-
-        // Enable JavaScript if needed
-        webView.settings.javaScriptEnabled = true
-        // Load a web page or HTML content
-
-        localJogo = "resume_game"
-        codigoAcesso = codigo_acesso.toString()
-        GetPerguntaOrContentAsyncTask().execute(codigoAcesso, localJogo)
-
-
-    }
-    private inner class GetPerguntaOrContentAsyncTask : AsyncTask<String, Void, String>() {
-
-        override fun doInBackground(vararg params: String?): String {
-            val codigoAcesso = params[0]
-            val localJogo = params[1]
-
-            val serverUrl = "http://10.0.2.2:80/framework/getCodigoAcesso.php?codigoAcesso=$codigoAcesso&identificacaoJogo=$localJogo"
-
-            try {
-                val url = URL(serverUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-
-                val reader = BufferedReader(InputStreamReader(conn.inputStream))
-                val response = StringBuilder()
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    response.append(line)
-                }
-                reader.close()
-
-                return response.toString()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return "Error: ${e.message}"
-            }
-        }
-
-        override fun onPostExecute(result: String?) {
-            super.onPostExecute(result)
-
-            try {
-
-                val jsonResponse = JSONObject(result)
-
-                // Check if the JSON response contains a redirectURL
-                if (jsonResponse.has("redirectURL")) {
-                    val redirectURL = "http://10.0.2.2:80/framework/"+ jsonResponse.getString("redirectURL")
-
-                    // Load the redirect URL in the WebView
-                    val webView = findViewById<WebView>(R.id.webView)
-
-                    webView.settings.javaScriptEnabled = true
-
-                    val jsInterface =
-                        GamEducationInterface(this@MainActivity)
-                    webView.addJavascriptInterface(jsInterface, "AndroidInterface");
-                    webView.loadUrl(redirectURL)
-                } else {
-                    // Handle the case where there is no redirectURL in the response
-                    // You can display an error message or take appropriate action
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                // Handle JSON parsing or other exceptions here
-            }
-        }
-    }
 
     // Method to close the WebView
     fun closeWebView() {
@@ -804,50 +699,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             }
         }
     }
-    inner class VerificaCodigoAcessoAsyncTask : AsyncTask<Int, Void, String>() {
 
-        override fun doInBackground(vararg params: Int?): String {
-            val codigo_acesso = params[0] ?: return "Error: Missing codigo_acesso"
-
-            try {
-                val serverUrl = "http://10.0.2.2:80/framework/verifica_codigo_acesso.php?codigo_acesso=$codigo_acesso"
-                val url = URL(serverUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-
-                val reader = BufferedReader(InputStreamReader(conn.inputStream))
-                val response = StringBuilder()
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    response.append(line)
-                }
-                reader.close()
-
-                return response.toString()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("YourAppName", "Error: ${e.message}", e)
-                return "Error: ${e.message}"
-            }
-        }
-
-        override fun onPostExecute(result: String?) {
-            super.onPostExecute(result)
-
-            if (result == "codigo_acesso_exists") {
-                // Update UI or perform actions here...
-                localJogo = "start_game"
-                val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
-
-                sharedPreferences.edit().putString("localJogo",localJogo).apply()
-                (this@MainActivity as SharedPreferencesUpdateListener).onSharedPreferencesUpdateComplete()
-
-            } else {
-                // Update UI or perform actions here...
-                restartActivity()
-            }
-        }
-    }
 
     override fun onSharedPreferencesUpdateComplete() {
         recreate()

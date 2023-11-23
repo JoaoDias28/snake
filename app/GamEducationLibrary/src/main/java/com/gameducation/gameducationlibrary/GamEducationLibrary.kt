@@ -6,63 +6,55 @@ import android.content.Intent
 import android.os.Handler
 import android.util.Log
 import android.webkit.WebView
+import android.widget.Button
 import androidx.core.app.ActivityCompat.recreate
 
-class GamEducationLibrary(private val context: Context, private val webView: WebView) {
+class GamEducationLibrary(
+    private val context: Context,
+    private val webView: WebView,
+    private val activity: Activity,
+    private val accessCodeProcessedCallback: (Boolean) -> Unit
+) {
 
-    private val accessCodeProcessor = AccessCodeProcessor(context,webView, this)
+    private val accessCodeProcessor = AccessCodeProcessor(context, webView, this)
 
-    private val handler = Handler()
+    val isAccessCodeValid: Boolean
+        get() = !AccessCodeManager.getAccessCode(context).isNullOrEmpty()
 
-    fun isSavedCodigoAcesso(context: Context):Boolean {
-        if(!getCodigoAcesso(context).isNullOrEmpty()){
-            Log.d("isSaved","true")
-           return true
+    // Method to setup a button to clear the access code
+    fun setupClearButton(button: Button) {
+        button.setOnClickListener {
+            clearAccessCode()
+            recreate(activity)
         }
-        Log.d("isSaved","false")
+    }
+
+    // Method to clear the access code
+    private fun clearAccessCode() {
+        AccessCodeManager.clearAccessCode(context)
+        // Perform any additional logic as needed after clearing the access code
+    }
+    fun isSavedAccessCode(context: Context) :Boolean {
+        if(AccessCodeManager.getAccessCode(context).isNullOrEmpty()){
             return false
-
-    }
-    private fun getCodigoAcesso(context: Context ): String {
-        if (!AccessCodeManager.getAccessCode(context).isNullOrEmpty() ){
-            Log.d("isSaved",AccessCodeManager.getAccessCode(context))
-            return AccessCodeManager.getAccessCode(context)
         }
-        return ""
-    }
+            return true
+        }
 
-    var isAccessCodeValid: Boolean = false
-        private set
-
-    fun showAccessCodeInputPage(): Boolean {
-        return accessCodeProcessor.showAccessCodeInputPage()
-
+    fun showAccessCodeInputPageAndAwait() {
+        accessCodeProcessor.showAccessCodeInputPageAndAwait { result ->
+            onAccessCodeProcessed(result, accessCodeProcessor.getAccessCode().toString())
+            accessCodeProcessedCallback(result)
+        }
     }
 
     fun onAccessCodeProcessed(result: Boolean, accessCode: String) {
         if (result) {
-            // Set the access code validity
-            isAccessCodeValid = true
 
-            Log.d("Library", "codigo acesso : "+accessCode.toString())
-            AccessCodeManager.saveAccessCode(context,accessCode)
-
-
-
-
+            Log.d("Library", "codigo acesso: $accessCode")
+            AccessCodeManager.saveAccessCode(context, accessCode)
         } else {
             // Handle case where the access code is not valid
         }
-
     }
-
-
-    private fun recreate() {
-        // Add logic to close the current WebView and launch another asking for the code
-        // You can use intents or any other navigation mechanism depending on your application structure
-    }
-
-
-
-
 }

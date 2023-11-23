@@ -49,29 +49,37 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gam_education)
 
+
+
         val accessCodeWebView = findViewById<WebView>(R.id.webView)
-        gamEducationLibrary = GamEducationLibrary(this, accessCodeWebView)
+        gamEducationLibrary = GamEducationLibrary(this, accessCodeWebView,this ) { isAccessCodeValid ->
+        Log.d("TAG",gamEducationLibrary?.isSavedAccessCode(this).toString())
 
-        if(gamEducationLibrary?.isSavedCodigoAcesso(this) == true){
 
+            if (isAccessCodeValid) {
                 comecarJogo(this)
-            }else{
-            gamEducationLibrary?.showAccessCodeInputPage()
+            } else {
 
+            }
 
-            recreate()
+        }
+        if (gamEducationLibrary!!.isAccessCodeValid) {
+            comecarJogo(this)
+        } else {
+
         }
 
-
-
-
-
+        gamEducationLibrary?.showAccessCodeInputPageAndAwait()
 
     }
 
 
+
+
+
+
     fun comecarJogo(context: Context){
-            Log.d("casa", "true")
+
         setContentView(R.layout.activity_main)
 
 
@@ -98,18 +106,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             mutableListOf(snake) // Keep track of the position of each snake segment
         val handler = Handler()
             val logOffButton = findViewById<Button>(R.id.logOffButton)
-
-            logOffButton.setOnClickListener {
-                // Clear the saved variables in SharedPreferences
-                val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
-                val editor = sharedPreferences.edit()
-                sharedPreferences.edit().putInt("codigo_acesso",0)
-                editor.clear()
-                editor.apply()
-
-                // Restart the activity
-                restartActivity()
-            }
+            gamEducationLibrary?.setupClearButton(logOffButton)
 
 
 
@@ -268,6 +265,8 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
                     for (i in snakeSegments.size - 1 downTo 1) { // Update the position of each snake segment except for the head
                         snakeSegments[i].x = snakeSegments[i - 1].x
                         snakeSegments[i].y = snakeSegments[i - 1].y
+
+
                     }
 
 

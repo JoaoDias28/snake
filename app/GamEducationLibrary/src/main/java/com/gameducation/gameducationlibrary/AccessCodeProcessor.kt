@@ -11,14 +11,13 @@ import android.webkit.WebViewClient
 import java.util.concurrent.CountDownLatch
 class AccessCodeProcessor(
     private val context: Context,
-    private val webView: WebView,
     private val library: GamEducationLibrary
 ) {
     private var accessCodeP: String? = null
     private var isAccessCodeValid: Boolean = false
     private var completionCallback: ((Boolean) -> Unit)? = null
 
-    fun showAccessCodeInputPageAndAwait(callback: (Boolean) -> Unit) {
+    fun showAccessCodeInputPageAndAwait(callback: (Boolean) -> Unit, webView: WebView) {
         completionCallback = callback
 
         webView.settings.javaScriptEnabled = true

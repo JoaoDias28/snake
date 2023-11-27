@@ -17,16 +17,16 @@ import java.net.URL
 
 class GamEducationLibrary(
     private val context: Context,
-    private val webView: WebView,
     private val activity: Activity,
     private val accessCodeProcessedCallback: (Boolean) -> Unit ,
     private val questionAndContentCallback: (Int) -> Unit
+
 ) {
     private var lastQuestionResult: Int? = null
 
 
-    private val accessCodeProcessor = AccessCodeProcessor(context, webView, this)
-    private val questionAndContentProcessor = QuestionAndContentProcessor(context,webView,this)
+    private val accessCodeProcessor = AccessCodeProcessor(context, this)
+    private val questionAndContentProcessor = QuestionAndContentProcessor(context, this)
     val isAccessCodeValid: Boolean
         get() = !AccessCodeManager.getAccessCode(context).isNullOrEmpty()
 
@@ -51,22 +51,26 @@ class GamEducationLibrary(
         return true
     }
 
-    fun showQuestionPageAndAwait(local_jogo: String) {
+    fun showQuestionPageAndAwait(local_jogo: String, webView: WebView) {
         // Remove this line: questionAndContentProcessor.showQuestionPageAndAwait { result ->
         // Add this line:
-        questionAndContentProcessor.showQuestionPageAndAwait(questionAndContentCallback,local_jogo)
+
+        questionAndContentProcessor.showQuestionPageAndAwait(
+            questionAndContentCallback,
+            local_jogo,
+            webView
+        )
     }
 
-    fun showAccessCodeInputPageAndAwait() {
-        accessCodeProcessor.showAccessCodeInputPageAndAwait { result ->
-            onAccessCodeProcessed(result, accessCodeProcessor.getAccessCode().toString())
-            accessCodeProcessedCallback(result)
-        }
+    fun showAccessCodeInputPageAndAwait(webView: WebView) {
+        accessCodeProcessor.showAccessCodeInputPageAndAwait(accessCodeProcessedCallback, webView)
     }
 
-    fun onQuestionResultProcessed(result: Int){
+
+    fun onQuestionResultProcessed(result: Int) {
         lastQuestionResult = result
     }
+
     fun onAccessCodeProcessed(result: Boolean, accessCode: String) {
         if (result) {
 
@@ -76,6 +80,7 @@ class GamEducationLibrary(
             // Handle case where the access code is not valid
         }
     }
-
 }
+
+
 

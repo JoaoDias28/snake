@@ -17,40 +17,42 @@ import java.net.URL
 
 class QuestionAndContentProcessor(
     private val context: Context,
-    private val webView: WebView,
+
     private val library: GamEducationLibrary
 ) {
+    private var webView: WebView? = null
     private var accessCode: String? = null
     private var localJogo: String? = null
     private var completionCallback: ((Int) -> Unit)? = null
 
-    fun showQuestionPageAndAwait(callback: (Int) -> Unit, local_jogo: String) {
+    fun showQuestionPageAndAwait(callback: (Int) -> Unit, local_jogo: String, web_view: WebView) {
         completionCallback = callback
         localJogo = local_jogo
         accessCode = AccessCodeManager.getAccessCode(context)
+        webView = web_view
 
         // Send access code and localJogo to the server to get the URL
         GetPerguntaOrContentAsyncTask().execute(accessCode, localJogo)
     }
 
     private fun loadQuestionPage(url: String) {
-        webView.settings.javaScriptEnabled = true
+        webView?.settings?.javaScriptEnabled = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(true)
         }
 
-        webView.addJavascriptInterface(this, "QuestionAndContentProcessor")
+        webView?.addJavascriptInterface(this, "QuestionAndContentProcessor")
 
-        webView.webViewClient = object : WebViewClient() {
+        webView?.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 Handler().postDelayed({
-                    webView.loadUrl("javascript:QuestionAndContentProcessor.onPageLoaded();")
+                    webView?.loadUrl("javascript:QuestionAndContentProcessor.onPageLoaded();")
                 }, 1000)
             }
         }
 
         // Load the received URL in the WebView
-        webView.loadUrl(url)
+        webView?.loadUrl(url)
     }
 
     @JavascriptInterface
@@ -92,7 +94,7 @@ class QuestionAndContentProcessor(
                     response.append(line)
                 }
                 reader.close()
-
+                Log.d("QuestionAndContent","GetPergunta "+response.toString())
                 return response.toString()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -105,9 +107,10 @@ class QuestionAndContentProcessor(
 
             try {
                 val jsonResponse = JSONObject(result)
-
+                Log.d("QuestionAndContent",jsonResponse.getString("redirectURL").toString())
                 // Check if the JSON response contains a redirectURL
                 if (jsonResponse.has("redirectURL")) {
+                    Log.d("QuestionAndContent",jsonResponse.getString("redirectURL").toString())
                     val redirectURL = "http://10.0.2.2:80/framework/" + jsonResponse.getString("redirectURL")
 
                     // Load the redirect URL in the WebView
@@ -115,10 +118,12 @@ class QuestionAndContentProcessor(
                 } else {
                     // Handle the case where there is no redirectURL in the response
                     // You can display an error message or take appropriate action
+                    Log.d("QuestionAndContent","else de ter rediredctUrl")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Handle JSON parsing or other exceptions here
+                Log.d("QuestionAndContent","exception")
             }
         }
     }

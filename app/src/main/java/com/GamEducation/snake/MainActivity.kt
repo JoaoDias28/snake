@@ -52,17 +52,15 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
 
         val accessCodeWebView = findViewById<WebView>(R.id.webView)
-        gamEducationLibrary = GamEducationLibrary(this, accessCodeWebView, this,
+        gamEducationLibrary = GamEducationLibrary(this, this,
             { isAccessCodeValid ->
                 if (isAccessCodeValid) {
                     comecarJogo(this)
                 } else {
                     // Handle the case where the access code is not valid
                 }
-            },
-            { questionResult ->
-                // Handle the result of the question processing
-                // You can update UI or take other actions based on the result
+            },{
+
             }
         )
 
@@ -72,7 +70,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
         }
 
-        gamEducationLibrary?.showAccessCodeInputPageAndAwait()
+        gamEducationLibrary?.showAccessCodeInputPageAndAwait(accessCodeWebView)
 
     }
 
@@ -673,7 +671,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
 
 
-            gamEducationLibrary?.showQuestionPageAndAwait("resume_game")
+            gamEducationLibrary?.showQuestionPageAndAwait("resume_game",webView)
 
         }
         builder.setNegativeButton("No") { _, _ ->

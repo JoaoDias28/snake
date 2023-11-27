@@ -3,21 +3,30 @@ package com.gameducation.gameducationlibrary
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Handler
 import android.util.Log
 import android.webkit.WebView
 import android.widget.Button
 import androidx.core.app.ActivityCompat.recreate
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 class GamEducationLibrary(
     private val context: Context,
     private val webView: WebView,
     private val activity: Activity,
-    private val accessCodeProcessedCallback: (Boolean) -> Unit
+    private val accessCodeProcessedCallback: (Boolean) -> Unit ,
+    private val questionAndContentCallback: (Int) -> Unit
 ) {
+    private var lastQuestionResult: Int? = null
+
 
     private val accessCodeProcessor = AccessCodeProcessor(context, webView, this)
-
+    private val questionAndContentProcessor = QuestionAndContentProcessor(context,webView,this)
     val isAccessCodeValid: Boolean
         get() = !AccessCodeManager.getAccessCode(context).isNullOrEmpty()
 
@@ -34,12 +43,19 @@ class GamEducationLibrary(
         AccessCodeManager.clearAccessCode(context)
         // Perform any additional logic as needed after clearing the access code
     }
-    fun isSavedAccessCode(context: Context) :Boolean {
-        if(AccessCodeManager.getAccessCode(context).isNullOrEmpty()){
+
+    fun isSavedAccessCode(context: Context): Boolean {
+        if (AccessCodeManager.getAccessCode(context).isNullOrEmpty()) {
             return false
         }
-            return true
-        }
+        return true
+    }
+
+    fun showQuestionPageAndAwait(local_jogo: String) {
+        // Remove this line: questionAndContentProcessor.showQuestionPageAndAwait { result ->
+        // Add this line:
+        questionAndContentProcessor.showQuestionPageAndAwait(questionAndContentCallback,local_jogo)
+    }
 
     fun showAccessCodeInputPageAndAwait() {
         accessCodeProcessor.showAccessCodeInputPageAndAwait { result ->
@@ -48,6 +64,9 @@ class GamEducationLibrary(
         }
     }
 
+    fun onQuestionResultProcessed(result: Int){
+        lastQuestionResult = result
+    }
     fun onAccessCodeProcessed(result: Boolean, accessCode: String) {
         if (result) {
 
@@ -57,4 +76,6 @@ class GamEducationLibrary(
             // Handle case where the access code is not valid
         }
     }
+
 }
+

@@ -52,17 +52,20 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
 
         val accessCodeWebView = findViewById<WebView>(R.id.webView)
-        gamEducationLibrary = GamEducationLibrary(this, accessCodeWebView,this ) { isAccessCodeValid ->
-        Log.d("TAG",gamEducationLibrary?.isSavedAccessCode(this).toString())
-
-
-            if (isAccessCodeValid) {
-                comecarJogo(this)
-            } else {
-
+        gamEducationLibrary = GamEducationLibrary(this, accessCodeWebView, this,
+            { isAccessCodeValid ->
+                if (isAccessCodeValid) {
+                    comecarJogo(this)
+                } else {
+                    // Handle the case where the access code is not valid
+                }
+            },
+            { questionResult ->
+                // Handle the result of the question processing
+                // You can update UI or take other actions based on the result
             }
+        )
 
-        }
         if (gamEducationLibrary!!.isAccessCodeValid) {
             comecarJogo(this)
         } else {
@@ -661,11 +664,16 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             editor.apply()
 
 
+
+
             setContentView(R.layout.activity_gam_education)
 
 
             val webView = findViewById<WebView>(R.id.webView)
 
+
+
+            gamEducationLibrary?.showQuestionPageAndAwait("resume_game")
 
         }
         builder.setNegativeButton("No") { _, _ ->
@@ -684,20 +692,6 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         builder.show()
     }
 
-
-
-    // Method to close the WebView
-    fun closeWebView() {
-        val webView = findViewById<WebView>(R.id.webView)
-        runOnUiThread {
-            if (webView != null) {
-                webView.loadData("", "text/html", "utf-8")
-                webView.clearCache(true)
-                webView.clearHistory()
-                webView.destroy()
-            }
-        }
-    }
 
 
     override fun onSharedPreferencesUpdateComplete() {

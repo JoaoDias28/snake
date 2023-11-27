@@ -33,7 +33,7 @@ public class GamEducationInterface {
             @Override
             public void run() {
                 // Close the WebView and recreate the activity on the main thread
-                ((MainActivity) context).closeWebView();
+
                 ((MainActivity) context).recreate();
             }
         });

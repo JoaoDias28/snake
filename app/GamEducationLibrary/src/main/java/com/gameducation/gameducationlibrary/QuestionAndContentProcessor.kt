@@ -3,12 +3,16 @@ package com.gameducation.gameducationlibrary
 import android.content.Context
 import android.os.AsyncTask
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
+import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -17,22 +21,31 @@ import java.net.URL
 
 class QuestionAndContentProcessor(
     private val context: Context,
-
     private val library: GamEducationLibrary
 ) {
     private var webView: WebView? = null
-    private var accessCode: String? = null
+    private lateinit var deferred: CompletableDeferred<Int> // Use Int or any appropriate type
     private var localJogo: String? = null
-    private var completionCallback: ((Int) -> Unit)? = null
 
-    fun showQuestionPageAndAwait(callback: (Int) -> Unit, local_jogo: String, web_view: WebView) {
-        completionCallback = callback
+    interface QuestionCallback {
+        fun onSuccess(result: Int)
+    }
+
+    fun showQuestionPageAndAwait(
+        local_jogo: String,
+        web_view: WebView,
+        callback: QuestionCallback
+    ) {
         localJogo = local_jogo
-        accessCode = AccessCodeManager.getAccessCode(context)
         webView = web_view
+        deferred = CompletableDeferred()
 
         // Send access code and localJogo to the server to get the URL
-        GetPerguntaOrContentAsyncTask().execute(accessCode, localJogo)
+        GetPerguntaOrContentAsyncTask().execute(localJogo)
+        GlobalScope.launch(Dispatchers.Main) {
+            val result = deferred.await()
+            callback.onSuccess(result)
+        }
     }
 
     private fun loadQuestionPage(url: String) {
@@ -45,9 +58,7 @@ class QuestionAndContentProcessor(
 
         webView?.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
-                Handler().postDelayed({
-                    webView?.loadUrl("javascript:QuestionAndContentProcessor.onPageLoaded();")
-                }, 1000)
+                webView?.loadUrl("javascript:QuestionAndContentProcessor.onPageLoaded();")
             }
         }
 
@@ -64,23 +75,29 @@ class QuestionAndContentProcessor(
     @JavascriptInterface
     fun onSubmissionComplete(value: Int) {
         // Ensure UI-related operations are performed on the main thread
-        Handler(Looper.getMainLooper()).post {
+        GlobalScope.launch(Dispatchers.Main) {
             // Process the value received from the server
             Log.d("a", "Received value from server: $value")
 
             // Notify the completion callback
-            completionCallback?.invoke(value)
-            library.onQuestionResultProcessed(value)
+            deferred.complete(value)
+
+            // Delay the destruction of the WebView until it's detached from the window
+            delay(1000) // Adjust the delay as needed
+            webView?.loadData("", "text/html", "utf-8")
+            webView?.clearCache(true)
+            webView?.clearHistory()
+            webView?.destroy()
         }
     }
 
     private inner class GetPerguntaOrContentAsyncTask : AsyncTask<String, Void, String>() {
 
         override fun doInBackground(vararg params: String?): String {
-            val codigoAcesso = params[0]
-            val localJogo = params[1]
+            val localJogo = params[0]
 
-            val serverUrl = "http://10.0.2.2:80/framework/getCodigoAcesso.php?codigoAcesso=$codigoAcesso&identificacaoJogo=$localJogo"
+            val serverUrl =
+                "http://10.0.2.2:80/framework/getCodigoAcesso.php?codigoAcesso=${AccessCodeManager.getAccessCode(context)}&identificacaoJogo=$localJogo"
 
             try {
                 val url = URL(serverUrl)
@@ -94,7 +111,7 @@ class QuestionAndContentProcessor(
                     response.append(line)
                 }
                 reader.close()
-                Log.d("QuestionAndContent","GetPergunta "+response.toString())
+                Log.d("QuestionAndContent", "GetPergunta " + response.toString())
                 return response.toString()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -107,23 +124,24 @@ class QuestionAndContentProcessor(
 
             try {
                 val jsonResponse = JSONObject(result)
-                Log.d("QuestionAndContent",jsonResponse.getString("redirectURL").toString())
+                Log.d("QuestionAndContent", jsonResponse.getString("redirectURL").toString())
                 // Check if the JSON response contains a redirectURL
                 if (jsonResponse.has("redirectURL")) {
-                    Log.d("QuestionAndContent",jsonResponse.getString("redirectURL").toString())
-                    val redirectURL = "http://10.0.2.2:80/framework/" + jsonResponse.getString("redirectURL")
+                    Log.d("QuestionAndContent", jsonResponse.getString("redirectURL").toString())
+                    val redirectURL =
+                        "http://10.0.2.2:80/framework/" + jsonResponse.getString("redirectURL")
 
                     // Load the redirect URL in the WebView
                     loadQuestionPage(redirectURL)
                 } else {
                     // Handle the case where there is no redirectURL in the response
                     // You can display an error message or take appropriate action
-                    Log.d("QuestionAndContent","else de ter rediredctUrl")
+                    Log.d("QuestionAndContent", "else de ter rediredctUrl")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Handle JSON parsing or other exceptions here
-                Log.d("QuestionAndContent","exception")
+                Log.d("QuestionAndContent", "exception")
             }
         }
     }

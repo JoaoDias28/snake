@@ -8,17 +8,27 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.CountDownLatch
+
 class AccessCodeProcessor(
     private val context: Context,
     private val library: GamEducationLibrary
 ) {
     private var accessCodeP: String? = null
     private var isAccessCodeValid: Boolean = false
-    private var completionCallback: ((Boolean) -> Unit)? = null
+    private lateinit var deferred: CompletableDeferred<String>
 
-    fun showAccessCodeInputPageAndAwait(callback: (Boolean) -> Unit, webView: WebView) {
-        completionCallback = callback
+    interface AccessCodeCallback {
+        fun onSuccess(result: Boolean, accessCode: String)
+    }
+
+    fun showAccessCodeInputPageAndAwait(webView: WebView, callback: AccessCodeCallback) {
+        deferred = CompletableDeferred()
 
         webView.settings.javaScriptEnabled = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -29,14 +39,17 @@ class AccessCodeProcessor(
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
-                Handler().postDelayed({
-                    webView.loadUrl("javascript:AccessCodeProcessor.onPageLoaded();")
-                }, 1000)
+                webView.loadUrl("javascript:AccessCodeProcessor.onPageLoaded();")
             }
         }
 
         // Load the web page where users input the access code
         webView.loadUrl("http://10.0.2.2:80/framework/pedirCodigoAcesso.html")
+
+        GlobalScope.launch(Dispatchers.Main) {
+            val accessCode = deferred.await()
+            callback.onSuccess(isAccessCodeValid, accessCode)
+        }
     }
 
     @JavascriptInterface
@@ -48,18 +61,14 @@ class AccessCodeProcessor(
     @JavascriptInterface
     fun onSubmissionComplete(accessCode: String) {
         // Ensure UI-related operations are performed on the main thread
-        Handler(Looper.getMainLooper()).post {
-            Log.d("a", accessCode.toString())
+        GlobalScope.launch(Dispatchers.Main) {
             if (accessCode.isNullOrEmpty()) {
-                library.onAccessCodeProcessed(isAccessCodeValid, accessCode)
+                isAccessCodeValid = false
+            } else {
+                accessCodeP = accessCode
+                isAccessCodeValid = true
             }
-         accessCodeP = accessCode
-            // Process the access code, update isAccessCodeValid, and trigger the library
-            isAccessCodeValid = true
-            library.onAccessCodeProcessed(isAccessCodeValid, accessCode)
-
-            // Notify the completion callback
-            completionCallback?.invoke(isAccessCodeValid)
+            deferred.complete(accessCode)
         }
     }
 

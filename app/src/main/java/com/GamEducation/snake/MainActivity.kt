@@ -35,6 +35,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
     var gamEducationLibrary: GamEducationLibrary? = null
 
+    var resume_game_bool = false;
     var localJogo = "new_game";
     var orderedItemOrder = 0
     var corretaOuVista = false;
@@ -49,28 +50,20 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gam_education)
 
-
-
         val accessCodeWebView = findViewById<WebView>(R.id.webView)
-        gamEducationLibrary = GamEducationLibrary(this, this,
-            { isAccessCodeValid ->
-                if (isAccessCodeValid) {
-                    comecarJogo(this)
-                } else {
-                    // Handle the case where the access code is not valid
-                }
-            },{
+        gamEducationLibrary = GamEducationLibrary(this, this)
 
+        // Example usage:
+
+        gamEducationLibrary?.showAccessCodeInputPage(accessCodeWebView, object : GamEducationLibrary.AccessCodeCallback {
+            override fun onSuccess(accessCode: Boolean) {
+                comecarJogo(this@MainActivity)
             }
-        )
 
-        if (gamEducationLibrary!!.isAccessCodeValid) {
-            comecarJogo(this)
-        } else {
-
-        }
-
-        gamEducationLibrary?.showAccessCodeInputPageAndAwait(accessCodeWebView)
+            override fun onFailure() {
+                // Handle failure
+            }
+        })
 
     }
 
@@ -107,18 +100,21 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             mutableListOf(snake) // Keep track of the position of each snake segment
         val handler = Handler()
             val logOffButton = findViewById<Button>(R.id.logOffButton)
+
             gamEducationLibrary?.setupClearButton(logOffButton)
 
 
 
             val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
-            val correta = sharedPreferences.getInt("correct", 0)
-            val percentage = sharedPreferences.getFloat("percentage", 0.0f)
+            val percentage = sharedPreferences.getInt( "QuestionResultFromGamEducation", 0)
             localJogo = sharedPreferences.getString("localJogo","new_game").toString()
-            if (localJogo == "resume_game" && correta ==  1  ){
+        Log.d("MainActivity","localJogo"+localJogo)
+            if (localJogo == "resume_game" && percentage == 100 ){
+                Log.d("MainActivity","percentage"+percentage.toString())
                 resume.visibility = View.VISIBLE
                 resume.performClick()
             } else{
+                Log.d("MainActivity","percentage"+percentage.toString())
                 resume.visibility = View.INVISIBLE
             }
             sharedPreferences.edit().remove("correct")
@@ -656,10 +652,11 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
             val editor = sharedPreferences.edit()
 
+            editor.putString("localJogo",localJogo)
             editor.putString("currentDirection", currentDirection)
             editor.putLong("delayMillis", delayMillis)
             editor.putInt("score", scorex)
-            editor.apply()
+
 
 
 
@@ -671,7 +668,15 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
 
 
-            gamEducationLibrary?.showQuestionPageAndAwait("resume_game",webView)
+            gamEducationLibrary?.showQuestionPageAndAwait("resume_game",webView, object : GamEducationLibrary.QuestionCallback {
+                override fun onSuccess(result: Int) {
+                    Log.d("mainActivity","cheguei")
+                  editor.putInt("QuestionResultFromGamEducation",result)
+                    editor.apply()
+                    recreate()
+                }
+            })
+
 
         }
         builder.setNegativeButton("No") { _, _ ->
@@ -701,3 +706,5 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 interface SharedPreferencesUpdateListener {
     fun onSharedPreferencesUpdateComplete()
 }
+
+

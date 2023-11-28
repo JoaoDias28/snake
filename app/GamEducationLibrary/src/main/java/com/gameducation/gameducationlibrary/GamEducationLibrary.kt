@@ -2,85 +2,67 @@ package com.gameducation.gameducationlibrary
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.os.AsyncTask
-import android.os.Handler
-import android.util.Log
 import android.webkit.WebView
 import android.widget.Button
-import androidx.core.app.ActivityCompat.recreate
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
+import com.gameducation.gameducationlibrary.AccessCodeManager.clearAccessCode
 
 class GamEducationLibrary(
     private val context: Context,
-    private val activity: Activity,
-    private val accessCodeProcessedCallback: (Boolean) -> Unit ,
-    private val questionAndContentCallback: (Int) -> Unit
-
+    private val activity: Activity
 ) {
+    interface AccessCodeCallback {
+        fun onSuccess(accessCode: Boolean)
+        fun onFailure()
+    }
+
+    interface QuestionCallback {
+        fun onSuccess(result: Int)
+    }
+
     private var lastQuestionResult: Int? = null
-
-
     private val accessCodeProcessor = AccessCodeProcessor(context, this)
     private val questionAndContentProcessor = QuestionAndContentProcessor(context, this)
+
     val isAccessCodeValid: Boolean
         get() = !AccessCodeManager.getAccessCode(context).isNullOrEmpty()
 
-    // Method to setup a button to clear the access code
     fun setupClearButton(button: Button) {
         button.setOnClickListener {
-            clearAccessCode()
-            recreate(activity)
+            clearAccessCode(context)
+            activity.recreate()
         }
-    }
-
-    // Method to clear the access code
-    private fun clearAccessCode() {
-        AccessCodeManager.clearAccessCode(context)
-        // Perform any additional logic as needed after clearing the access code
     }
 
     fun isSavedAccessCode(context: Context): Boolean {
-        if (AccessCodeManager.getAccessCode(context).isNullOrEmpty()) {
-            return false
+        return !AccessCodeManager.getAccessCode(context).isNullOrEmpty()
+    }
+
+    fun showQuestionPageAndAwait(local_jogo: String, webView: WebView, callback: QuestionCallback) {
+        questionAndContentProcessor.showQuestionPageAndAwait(local_jogo, webView, object : QuestionAndContentProcessor.QuestionCallback {
+            override fun onSuccess(result: Int) {
+                callback.onSuccess(result)
+            }
+        })
+    }
+
+    fun showAccessCodeInputPage(webView: WebView, callback: AccessCodeCallback) {
+        if(isAccessCodeValid){
+            callback.onSuccess(true)
+            return
         }
-        return true
-    }
-
-    fun showQuestionPageAndAwait(local_jogo: String, webView: WebView) {
-        // Remove this line: questionAndContentProcessor.showQuestionPageAndAwait { result ->
-        // Add this line:
-
-        questionAndContentProcessor.showQuestionPageAndAwait(
-            questionAndContentCallback,
-            local_jogo,
-            webView
-        )
-    }
-
-    fun showAccessCodeInputPageAndAwait(webView: WebView) {
-        accessCodeProcessor.showAccessCodeInputPageAndAwait(accessCodeProcessedCallback, webView)
+        accessCodeProcessor.showAccessCodeInputPageAndAwait(webView, object : AccessCodeProcessor.AccessCodeCallback {
+            override fun onSuccess(result: Boolean, accessCode: String) {
+                if (result) {
+                    AccessCodeManager.saveAccessCode(context, accessCode)
+                    callback.onSuccess(result)
+                } else {
+                    // Handle case where the access code is not valid
+                    callback.onFailure()
+                }
+            }
+        })
     }
 
 
-    fun onQuestionResultProcessed(result: Int) {
-        lastQuestionResult = result
-    }
 
-    fun onAccessCodeProcessed(result: Boolean, accessCode: String) {
-        if (result) {
-
-            Log.d("Library", "codigo acesso: $accessCode")
-            AccessCodeManager.saveAccessCode(context, accessCode)
-        } else {
-            // Handle case where the access code is not valid
-        }
-    }
 }
-
-
-

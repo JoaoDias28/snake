@@ -1,0 +1,7 @@
+<ImageView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rouletteOptionImageView"
+    android:layout_width="64dp"
+    android:layout_height="64dp"
+    android:src="@drawable/snake_purple"
+    android:layout_gravity="center_horizontal" />

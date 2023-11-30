@@ -1,0 +1,60 @@
+<!-- res/layout/layout_roulette.xml -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/black"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Gire a roda para ganhar novas skins"
+        android:textColor="@color/grey"
+        android:textSize="20dp"
+        tools:ignore="HardcodedText,TextSizeCheck"></TextView>
+    <!-- The LinearLayout to hold the roulette wheel -->
+    <LinearLayout
+        android:id="@+id/rouletteContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:background="@color/black"
+       >
+
+        <com.GamEducation.snake.AutoScrollRecyclerView
+            android:id="@+id/recyclerViewRoulette"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"
+            android:clipToPadding="false"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"/>
+
+    </LinearLayout>
+
+    <!-- The Button to spin the roulette -->
+    <Button
+        android:id="@+id/spinButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Spin"
+        android:layout_gravity="center_horizontal"/>
+
+    <!-- The LinearLayout to hold the won skins at the bottom -->
+    <LinearLayout
+        android:id="@+id/wonSkinsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal">
+
+        <!-- Customize the layout with ImageView for each won skin -->
+        <!-- Add ImageView elements for each previously won skin -->
+
+    </LinearLayout>
+
+</LinearLayout>

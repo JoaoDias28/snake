@@ -18,8 +18,9 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import androidx.compose.material3.Button
 import com.gameducation.gameducationlibrary.GamEducationLibrary
-
+import com.GamEducation.snake.skinsClass
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -35,6 +36,8 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
     var gamEducationLibrary: GamEducationLibrary? = null
 
+    private lateinit var roulette: skinsClass
+    private lateinit var rouletteLayout: LinearLayout
     var resume_game_bool = false;
     var localJogo = "new_game";
     var orderedItemOrder = 0
@@ -124,6 +127,17 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         playagain.visibility = View.INVISIBLE
         score.visibility = View.INVISIBLE
         score2.visibility = View.INVISIBLE
+
+         rouletteLayout = layoutInflater.inflate(R.layout.layout_roulette, null) as LinearLayout
+        var roulette = skinsClass(this,rouletteLayout)
+
+        // Call a method to show the roulette page
+        val showRouletteButton = findViewById<Button>(R.id.rouletteButton)
+        showRouletteButton.setOnClickListener {
+            showRoulettePage()
+        }
+
+
 
         newgame.setOnClickListener {
             // Clear the board before adding elements
@@ -695,7 +709,80 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         builder.show()
     }
 
+    private fun showRoulettePage() {
+        // Assuming you have a layout for the roulette page
+        setContentView(R.layout.layout_roulette)
+        var selectedSkin = 0;
+        val rouletteContainer = findViewById<LinearLayout>(R.id.rouletteContainer)
+        val spinButton = findViewById<Button>(R.id.spinButton)
+        val wonSkinsContainer = findViewById<LinearLayout>(R.id.wonSkinsContainer)
 
+        // Create an instance of the skinsClass
+        roulette = skinsClass(this, findViewById(android.R.id.content))
+
+        if (!this::rouletteLayout.isInitialized) {
+            // If the layout is not initialized, create it and add it to the container
+            rouletteLayout = roulette.createRouletteLayout()
+            rouletteContainer.addView(rouletteLayout)
+        }
+        roulette.initRecyclerView()
+        // Set click listener for the spin button
+        spinButton.setOnClickListener {
+            // Spin the roulette
+             selectedSkin = roulette.spin()
+
+
+
+
+
+
+            Log.d("MainActivity",selectedSkin.toString())
+
+        }
+
+        // Set spin complete listener to handle UI updates after the spin
+        roulette.setSpinCompleteListener {
+            // Add any logic you need to perform after the spin is complete
+            // This will be called when the roulette.completeSpin() is invoked
+            setContentView(R.layout.activity_gam_education)
+
+
+            val webView = findViewById<WebView>(R.id.webView)
+            // Save the selected skin to the list of won skins
+            gamEducationLibrary?.showQuestionPageAndAwait("resume_game",webView, object : GamEducationLibrary.QuestionCallback {
+                override fun onSuccess(result: Int) {
+                    Log.d("mainActivity","cheguei")
+
+
+
+                    roulette.saveWonSkin(selectedSkin)
+
+                    // Update the UI to show the won skins
+                    updateWonSkins(wonSkinsContainer, roulette.getWonSkins())
+
+                    setContentView(R.layout.activity_prize)
+
+                     val voltarButton = findViewById<Button>(R.id.buttonprize)
+                    val imageViewPrize = findViewById<ImageView>(R.id.imageViewprize)
+
+                    voltarButton.setOnClickListener {
+                        recreate()
+                    }
+                    val skinDrawableId = roulette.getSkinDrawableId(selectedSkin)
+                    imageViewPrize.setImageResource(skinDrawableId)
+                }
+            })
+        }
+    }
+    private fun updateWonSkins(container: LinearLayout, wonSkins: List<Int>) {
+        container.removeAllViews()
+
+        for (wonSkin in wonSkins) {
+            val wonSkinImageView = ImageView(this)
+            wonSkinImageView.setImageResource(wonSkin)
+            container.addView(wonSkinImageView)
+        }
+    }
 
     override fun onSharedPreferencesUpdateComplete() {
         recreate()
@@ -707,4 +794,5 @@ interface SharedPreferencesUpdateListener {
     fun onSharedPreferencesUpdateComplete()
 }
 
+data class Skin(val name:String, val imageResource: Int)
 

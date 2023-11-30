@@ -61,6 +61,20 @@
             android:layout_marginEnd="130dp"
             android:text="Log Off" />
 
+        <Button
+            android:id="@+id/rouletteButton"
+            android:layout_width="100dp"
+            android:layout_height="64dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="10dp"
+            android:text="Rewards"
+            android:textSize="14dp"
+            android:gravity="center"
+
+            />
+
 
         <Button
             android:id="@+id/new_game"
@@ -116,13 +130,14 @@
             android:text="Continuar o jogo? ">
 
         </Button>
+
         <RelativeLayout
             android:id="@+id/board"
             android:layout_width="380dp"
             android:layout_height="380dp"
+            android:layout_marginLeft="5dp"
             android:background="@color/black"
             android:gravity="center"
-            android:layout_marginLeft="5dp"
             tools:ignore="MissingConstraints">
 
 

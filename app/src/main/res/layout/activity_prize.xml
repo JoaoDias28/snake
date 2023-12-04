@@ -7,13 +7,23 @@
     android:background="@color/black"
 
     >
-
+    <TextView
+        android:id="@+id/textView1prize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="350dp"
+        android:text="O seu resultado foi : "
+        android:textColor="@color/grey"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        />
     <TextView
         android:id="@+id/textView2prize"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="250dp"
-        android:text="Parabens ganhou o seguinte prémio : "
         android:textColor="@color/grey"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -25,7 +35,7 @@
         android:id="@+id/imageViewprize"
         android:layout_width="wrap_content"
         android:layout_height="24dp"
-        android:src="@drawable/snake"
+
         android:minHeight="64dp"
         android:minWidth="64dp"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Your content for the card goes here -->
+    <ImageView
+        android:id="@+id/cardImage"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:src="@drawable/ic_launcher_foreground"
+        android:scaleType="centerInside"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/cardTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Card Title"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+
+
+</LinearLayout>

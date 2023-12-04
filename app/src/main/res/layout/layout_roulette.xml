@@ -41,9 +41,14 @@
         android:id="@+id/spinButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Spin"
+        android:text="Girar"
         android:layout_gravity="center_horizontal"/>
-
+    <Button
+        android:id="@+id/voltarButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Voltar"
+        android:layout_gravity="center_horizontal"/>
     <!-- The LinearLayout to hold the won skins at the bottom -->
     <LinearLayout
         android:id="@+id/wonSkinsContainer"

@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class skinsClass(private val context: Context, private val rootView: View) {
     private var selectedSkin: Int = -1
-    private val skins: List<Int> = listOf(
+    private var skins: List<Int> = listOf(
         R.drawable.snake,
         R.drawable.snake_yellow,
         R.drawable.snake_purple,
@@ -41,24 +41,44 @@ class skinsClass(private val context: Context, private val rootView: View) {
     fun getSkinDrawableId(skin: Int): Int {
         return skin // Since your skins are resource IDs, you can directly use them as drawable IDs
     }
-    fun spin(): Int {
+    fun spin(): Pair<Int, Set<String>> {
+        val sharedPreferences = context.getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+        val stringSet = setOf("R.drawable.snake")
+        val savedSkinsSet = sharedPreferences.getStringSet("skinsJogador", stringSet) ?: emptySet()
+
+        // Convert the set to a list for easier manipulation
+        val savedSkinsList = savedSkinsSet.toList()
+
+        // Remove the saved skins from the original list
+        val remainingSkins = skins.filter { skinDrawableId ->
+            skinDrawableId !in savedSkinsList.mapNotNull { context.resources.getIdentifier(it, "drawable", context.packageName) }
+        }
+
+        Log.d("skinsClass",skins.toString())
         val durationMillis = 2000L
         val targetPosition = (0 until skins.size).random()
+        var targetLocation: Int? = null
 
         // Check if autoScrollRecyclerView is initialized
         if (::autoScrollRecyclerView.isInitialized) {
             // Scroll the AutoScrollRecyclerView
             autoScrollRecyclerView.smoothScrollToPosition(targetPosition)
         }
-
+        val updatedSkinsSet = savedSkinsSet.toMutableSet()
         val handler = Handler()
         handler.postDelayed({
             selectedSkin = skins[targetPosition]
+            targetLocation = targetPosition
             spinCompleteListener?.invoke()
+
+            updatedSkinsSet.add(selectedSkin.toString())
+            // Save the updated set back to SharedPreferences after the spin is complete
+            sharedPreferences.edit().putStringSet("skinsJogador",   updatedSkinsSet).apply()
         }, durationMillis)
 
-        return selectedSkin
+         return Pair(selectedSkin, updatedSkinsSet)
     }
+
 
     fun saveWonSkin(skin: Int) {
         wonSkins.add(skin)

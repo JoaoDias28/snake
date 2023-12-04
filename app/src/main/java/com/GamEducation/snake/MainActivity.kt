@@ -10,6 +10,7 @@ import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -18,6 +19,8 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.compose.material3.Button
 import com.gameducation.gameducationlibrary.GamEducationLibrary
 import com.GamEducation.snake.skinsClass
@@ -35,7 +38,7 @@ import kotlin.math.sqrt
 class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
     var gamEducationLibrary: GamEducationLibrary? = null
-
+    private lateinit var balloon: ImageView
     private lateinit var roulette: skinsClass
     private lateinit var rouletteLayout: LinearLayout
     var resume_game_bool = false;
@@ -48,7 +51,8 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
     var currentDirection = "right" // Start moving right by default
     val correct = 0
     val percentage = 0
-
+    private var activePowerup:String? = null
+    val powerups = listOf<String>("ReduceVelocity","perderPartesJogador")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gam_education)
@@ -97,6 +101,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         val continueButton = findViewById<Button>(R.id.continueGame)
         val score = findViewById<Button>(R.id.score)
         val score2 = findViewById<Button>(R.id.score2)
+        balloon = ImageView(this)
         val meat = ImageView(this)
         val snake = ImageView(this)
         val snakeSegments =
@@ -110,6 +115,8 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
             val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
             val percentage = sharedPreferences.getInt( "QuestionResultFromGamEducation", 0)
+
+
             localJogo = sharedPreferences.getString("localJogo","new_game").toString()
         Log.d("MainActivity","localJogo"+localJogo)
             if (localJogo == "resume_game" && percentage == 100 ){
@@ -137,7 +144,8 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             showRoulettePage()
         }
 
-
+        var lastBalloonTime = 0L
+        val balloonAppearanceInterval = 15 * 1000L
 
         newgame.setOnClickListener {
             // Clear the board before adding elements
@@ -150,6 +158,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             newgame.visibility = View.INVISIBLE
             score2.visibility = View.VISIBLE
             resume.visibility = View.INVISIBLE
+            showRouletteButton.visibility = View.INVISIBLE
 
             snake.setImageResource(R.drawable.snake)
             snake.layoutParams = ViewGroup.LayoutParams(
@@ -165,6 +174,24 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
 
 
+
+                // Show the balloon
+                val balloon = ImageView(this@MainActivity)
+                balloon.setImageResource(R.drawable.baseline_coffee_24)
+                balloon.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                board.addView(balloon)
+                // Set the position of the balloon (you may need to adjust this based on your requirements)
+                val random2 = Random()
+                val randomX2 = random2.nextInt(801) - 400
+                val randomY2 = random2.nextInt(801) - 400
+
+                balloon.x = randomX2.toFloat()
+                balloon.y = randomY2.toFloat()
+
+                // Add the balloon to the board
 
 
 
@@ -187,7 +214,93 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             meat.y = randomY.toFloat()
 
 
+            fun checkBalloonCollision(){
+                Log.d("checkBallon","cheguei")
+                val distanceThreshold = 50
 
+
+                val distance = sqrt((snake.x - balloon.x).pow(2) + (snake.y - balloon.y).pow(2))
+                Log.d("checkBallon","distance "+distance)
+                Log.d("checkBallon","balloon.x "+balloon.x)
+                Log.d("checkBallon","snake.x "+snake.x)
+                if (distance < distanceThreshold) { // Check if the distance between the snake head and the meat is less than the threshold
+
+                    Log.d("checkBallon","distancia menor")
+                    setContentView(R.layout.activity_powerups)
+
+                    val backButton = findViewById<Button>(R.id.buttonBack)
+                    val card1 = findViewById<CardView>(R.id.card1)
+                    val card2 = findViewById<CardView>(R.id.card2)
+                    val card3 = findViewById<CardView>(R.id.card3)
+
+                    backButton.setOnClickListener { recreate() }
+
+                    val cardTemplate = LayoutInflater.from(this).inflate(R.layout.card_powerup, null) as LinearLayout
+                    val cardImage = cardTemplate.findViewById<ImageView>(R.id.cardImage)
+                    val cardTitle = cardTemplate.findViewById<TextView>(R.id.cardTitle)
+
+                    cardImage.setImageResource(R.drawable.baseline_speed_24)
+                    cardTitle.setText("Reduz a velocidade do Jogador (min: 0% - max: 60%)")
+
+                    cardTemplate.removeAllViews()
+                    card1.addView(cardImage)
+                    card1.addView(cardTitle)
+
+                    card1.setOnClickListener {
+
+                        activePowerup = powerups.get(0)
+                        setContentView(R.layout.activity_gam_education)
+
+                        val webview:WebView = findViewById(R.id.webView)
+
+                        gamEducationLibrary?.showQuestionPageAndAwait("resume_game",webview,object : GamEducationLibrary.QuestionCallback {
+                            override fun onSuccess(result: Int) {
+                                Log.d("mainActivity","cheguei ao showQUestion")
+
+                                val percentageReduction = result * 0.6
+                                val newDelayMillis = (delayMillis * (1.0 - percentageReduction)).toLong()
+
+                                delayMillis = newDelayMillis
+                                val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+                                sharedPreferences.edit().putInt("QuestionResultFromGamEducation",100)
+                                sharedPreferences.edit().putLong("delayMillis",delayMillis)
+
+                                sharedPreferences.edit().apply()
+                                recreate()
+
+                            }
+                        })
+                    }
+
+
+                    val cardTemplate2 = LayoutInflater.from(this).inflate(R.layout.card_powerup, null) as LinearLayout
+                    val cardImage2 = cardTemplate2.findViewById<ImageView>(R.id.cardImage)
+                    val cardTitle2 = cardTemplate2.findViewById<TextView>(R.id.cardTitle)
+                    cardTemplate2.removeAllViews()
+                    cardImage2.setImageResource(R.drawable.baseline_coffee_24)
+                    cardTitle2.setText("Reduz o tamanho do Jogador pelo numero de partes (min: 0 - max: 5)")
+
+                    card2.addView(cardImage2)
+                    card2.addView(cardTitle2)
+
+                    val sharedPreferences =
+                        getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+
+                    if (delayMillis == 30L || scorex == 0) {
+                        // Do nothing or apply changes
+                    } else {
+                        sharedPreferences.edit().putLong("currentDirection", delayMillis).apply()
+                        sharedPreferences.edit().putLong("delayMillis", delayMillis).apply()
+                        sharedPreferences.edit().putInt("score", scorex).apply()
+                        sharedPreferences.edit().putInt("orderedItemOrder", orderedItemOrder)
+                            .apply()
+                    }
+
+                    score2.text = "score : " + scorex.toString() // Update delay text view
+
+
+                }
+            }
 
 
             fun checkSnakeBodyCollision() {
@@ -369,10 +482,13 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
                             snakeX += 0
                             snake.translationX = snakeX
                             resume.visibility = View.VISIBLE
+
                         }
                     }
+
                     checkSnakeBodyCollision()
                     checkFoodCollision()
+                    checkBalloonCollision()
                     handler.postDelayed(this, delayMillis)
                 }
             }
@@ -462,6 +578,54 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
             }
         }
+        fun checkBalloonCollision(){
+            val distanceThreshold = 50
+            Log.d("checkBallon","cheguei aqui tmb")
+            val distance = sqrt((snake.x - balloon.x).pow(2) + (snake.y - balloon.y).pow(2))
+
+            if (distance < distanceThreshold) { // Check if the distance between the snake head and the meat is less than the threshold
+                Log.d("checkBallon","distancia menor")
+
+                setContentView(R.layout.activity_powerups)
+
+                val backButton = findViewById<Button>(R.id.buttonBack)
+                val card1 = findViewById<CardView>(R.id.card1)
+                val card2 = findViewById<CardView>(R.id.card2)
+                val card3 = findViewById<CardView>(R.id.card3)
+
+                backButton.setOnClickListener { recreate() }
+
+                val cardTemplate = LayoutInflater.from(this).inflate(R.layout.card_powerup, null) as LinearLayout
+                val cardImage = cardTemplate.findViewById<ImageView>(R.id.cardImage)
+                val cardTitle = cardTemplate.findViewById<TextView>(R.id.cardTitle)
+
+
+                cardImage.setImageResource(R.drawable.baseline_speed_24)
+                cardTitle.setText("Reduz a velocidade do Jogador (min: 0% - max: 60%)")
+                card1.addView(cardImage)
+                card2.addView(cardTitle)
+
+                delayMillis-- // Reduce delay value by 1
+                scorex++
+                val sharedPreferences =
+                    getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+                val serializedData = delayMillis
+
+                if (delayMillis == 30L || scorex == 0) {
+                    // Do nothing or apply changes
+                } else {
+                    sharedPreferences.edit().putLong("currentDirection", delayMillis).apply()
+                    sharedPreferences.edit().putLong("delayMillis", delayMillis).apply()
+                    sharedPreferences.edit().putInt("score", scorex).apply()
+                    sharedPreferences.edit().putInt("orderedItemOrder", orderedItemOrder)
+                        .apply()
+                }
+
+                score2.text = "score : " + scorex.toString() // Update delay text view
+
+
+            }
+        }
 
         fun handleGameOver() {
             border.setBackgroundColor(getResources().getColor(R.color.red))
@@ -472,6 +636,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             score.text = "your score is  $scorex"
             score.visibility = View.VISIBLE
             score2.visibility = View.INVISIBLE
+            showRouletteButton.visibility = View.VISIBLE
         }
 
         val runnable = object : Runnable {
@@ -525,7 +690,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
                         snakeSegments[i].y = snakeSegments[i - 1].y
                     }
 
-
+                    checkBalloonCollision()
                     checkSnakeBodyCollision()
                     checkFoodCollision()
                 }
@@ -549,6 +714,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             scorex = savedScore
             board.visibility = View.VISIBLE
             newgame.visibility = View.INVISIBLE
+            showRouletteButton.visibility = View.INVISIBLE
             score2.visibility = View.VISIBLE
             resume.visibility = View.INVISIBLE
             score2.setText(scorex.toString())
@@ -711,12 +877,23 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
 
     private fun showRoulettePage() {
         // Assuming you have a layout for the roulette page
+
         setContentView(R.layout.layout_roulette)
         var selectedSkin = 0;
         val rouletteContainer = findViewById<LinearLayout>(R.id.rouletteContainer)
         val spinButton = findViewById<Button>(R.id.spinButton)
+        val voltarButton = findViewById<Button>(R.id.voltarButton)
         val wonSkinsContainer = findViewById<LinearLayout>(R.id.wonSkinsContainer)
 
+        val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+
+        val stringSet = setOf("R.drawable.snake")
+        val userStringSet = sharedPreferences.getStringSet("skinsJogador",stringSet)
+        val intList: List<Int> = userStringSet!!.map { it.toIntOrNull() ?: 0 }
+        updateWonSkins(wonSkinsContainer,intList)
+        voltarButton.setOnClickListener {
+            recreate()
+        }
         // Create an instance of the skinsClass
         roulette = skinsClass(this, findViewById(android.R.id.content))
 
@@ -729,8 +906,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         // Set click listener for the spin button
         spinButton.setOnClickListener {
             // Spin the roulette
-             selectedSkin = roulette.spin()
-
+            val (selectedSkin, updatedSkinsSet) = roulette.spin()
 
 
 
@@ -741,7 +917,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         }
 
         // Set spin complete listener to handle UI updates after the spin
-        roulette.setSpinCompleteListener {
+        roulette.setSpinCompleteListener{
             // Add any logic you need to perform after the spin is complete
             // This will be called when the roulette.completeSpin() is invoked
             setContentView(R.layout.activity_gam_education)
@@ -751,26 +927,58 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             // Save the selected skin to the list of won skins
             gamEducationLibrary?.showQuestionPageAndAwait("resume_game",webView, object : GamEducationLibrary.QuestionCallback {
                 override fun onSuccess(result: Int) {
-                    Log.d("mainActivity","cheguei")
+                    Log.d("mainActivity", "cheguei")
 
+                    Log.d("mainActivity", "selectedSkin" + selectedSkin.toString())
 
-
-                    roulette.saveWonSkin(selectedSkin)
-
-                    // Update the UI to show the won skins
-                    updateWonSkins(wonSkinsContainer, roulette.getWonSkins())
 
                     setContentView(R.layout.activity_prize)
 
-                     val voltarButton = findViewById<Button>(R.id.buttonprize)
+                    val voltarButton = findViewById<Button>(R.id.buttonprize)
                     val imageViewPrize = findViewById<ImageView>(R.id.imageViewprize)
+                    val textViewPrize1 = findViewById<TextView>(R.id.textView1prize)
+                    val textViewPrize2 = findViewById<TextView>(R.id.textView2prize)
 
+                    textViewPrize1.setText("O seu resultado foi: " + result.toString())
                     voltarButton.setOnClickListener {
                         recreate()
                     }
-                    val skinDrawableId = roulette.getSkinDrawableId(selectedSkin)
-                    imageViewPrize.setImageResource(skinDrawableId)
+                    if (result > 50) {
+                        textViewPrize2.setText("Parabéns ganhou o seguinte prémio: ")
+                        val stringSet = setOf("0")
+                        val durationMillis = 2000L
+                        val handler = Handler()
+                        handler.postDelayed({
+                            var sharedPreferences =
+                                getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
+
+                            var userStringSet =
+                                sharedPreferences.getStringSet("skinsJogador", stringSet)
+                            if (userStringSet!!.isNotEmpty()) {
+                                // Get the last element from the set
+                                val lastSkinString = userStringSet!!.last()
+
+                                var firstSkinString = userStringSet!!.first()
+                                // Convert the string back to an integer (assuming it's the drawable resource ID)
+                                val firstSkinDrawableId = firstSkinString.toIntOrNull()
+
+                                // If the conversion is successful and the drawable ID is valid, set it to the ImageView
+                                if (firstSkinDrawableId != null && firstSkinDrawableId != 0) {
+
+                                    imageViewPrize.setImageResource(firstSkinDrawableId)
+                                } else {
+
+                                    // Handle the case where the conversion fails or the drawable ID is not valid
+                                    // You might want to set a default image or display an error message
+                                    imageViewPrize.setImageResource(R.drawable.snake)
+                                }
+                            }
+                        }, durationMillis)
+                    }
+                else {
+                        textViewPrize2.setText("Não ganhou prémio, tente novamente!")
                 }
+             }
             })
         }
     }

@@ -81,7 +81,7 @@
         android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:text="As recompensas de jogo serão atribuidas conforme a resposta ás perguntas"
-        app:layout_constraintBottom_toTopOf="@+id/buttonBack"
+        app:layout_constraintBottom_toTopOf="@+id/buttonBackPowerUps"
         app:layout_constraintEnd_toEndOf="parent"
         android:textColor="@color/grey"
         app:layout_constraintStart_toStartOf="parent"
@@ -89,7 +89,7 @@
 
     <!-- Back Button -->
     <Button
-        android:id="@+id/buttonBack"
+        android:id="@+id/buttonBackPowerUps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Back"

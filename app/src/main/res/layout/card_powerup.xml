@@ -13,7 +13,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:src="@drawable/ic_launcher_foreground"
-        android:scaleType="centerInside"
+        android:scaleType="fitCenter"
         android:contentDescription="@null" />
 
     <TextView
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Card Title"
-        android:textSize="18sp"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
 

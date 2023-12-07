@@ -901,7 +901,6 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             val savedDelayMillis = sharedPreferences.getLong("delayMillis", 30L)
             val savedScore = sharedPreferences.getInt("score", 0)
 
-                Log.d("resume","savedDelay"+savedDelayMillis)
             logOffButton.visibility = View.INVISIBLE
             currentDirection = savedCurrentDirection.toString()
             delayMillis = savedDelayMillis
@@ -930,7 +929,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             var snakeY = snake.y
 
             // Show the balloon
-         balloon = ImageView(this@MainActivity)
+         balloon = ImageView(this)
             balloon.setImageResource(R.drawable.baseline_coffee_24)
             balloon.layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,

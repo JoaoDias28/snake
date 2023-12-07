@@ -1,0 +1,9 @@
+{
+  "GameName" : "snake",
+  "Description" : "Um jogo inspirado no clássico snake, com algumas modificações.",
+  "caminho_apk" : "",
+  "locais_jogo": {
+    "nome_local": "Reviver",
+    "descricao_local": "Aparece quando o aluno perde no jogo e "
+  }
+}

@@ -1,5 +1,6 @@
 package com.gameducation.gameducationlibrary
 
+import android.app.AlertDialog
 import android.content.Context
 import android.os.Build
 import android.os.Handler
@@ -25,6 +26,7 @@ class AccessCodeProcessor(
 
     interface AccessCodeCallback {
         fun onSuccess(result: Boolean, accessCode: String)
+        fun onFailure()
     }
 
     fun showAccessCodeInputPageAndAwait(webView: WebView, callback: AccessCodeCallback) {
@@ -69,6 +71,20 @@ class AccessCodeProcessor(
                 isAccessCodeValid = true
             }
             deferred.complete(accessCode)
+        }
+    }
+    @JavascriptInterface
+     fun onSubmissionDenied() {
+        val handler = Handler(Looper.getMainLooper())
+        handler.post {
+            val alertDialogBuilder = AlertDialog.Builder(context)
+            alertDialogBuilder.setTitle("Ocorreu um erro")
+            alertDialogBuilder.setMessage("Comunique com o seu professor para continuar.")
+            alertDialogBuilder.setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            val alertDialog = alertDialogBuilder.create()
+            alertDialog.show()
         }
     }
 

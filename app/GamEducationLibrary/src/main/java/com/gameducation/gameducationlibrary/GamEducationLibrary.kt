@@ -1,7 +1,11 @@
 package com.gameducation.gameducationlibrary
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.webkit.WebView
 import android.widget.Button
 import com.gameducation.gameducationlibrary.AccessCodeManager.clearAccessCode
@@ -58,6 +62,19 @@ class GamEducationLibrary(
                 } else {
                     // Handle case where the access code is not valid
                     callback.onFailure()
+                }
+            }
+            override fun onFailure() {
+                val handler = Handler(Looper.getMainLooper())
+                handler.post {
+                    val alertDialogBuilder = AlertDialog.Builder(context)
+                    alertDialogBuilder.setTitle("Ocorreu um erro")
+                    alertDialogBuilder.setMessage("Comunique com o seu professor para continuar.")
+                    alertDialogBuilder.setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    val alertDialog = alertDialogBuilder.create()
+                    alertDialog.show()
                 }
             }
         })

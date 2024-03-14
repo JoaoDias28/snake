@@ -929,7 +929,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
             var snakeY = snake.y
 
             // Show the balloon
-         balloon = ImageView(this)
+            balloon = ImageView(this)
             balloon.setImageResource(R.drawable.baseline_coffee_24)
             balloon.layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,

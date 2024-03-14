@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.AsyncTask
 import android.os.Build
 import android.util.Log
-import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -70,6 +69,21 @@ class QuestionAndContentProcessor(
     fun onPageLoaded() {
         // This method is called when the WebView page has finished loading
         // You can add any logic here that needs to be executed when the page is loaded
+    }
+
+    @JavascriptInterface
+    fun closeWebView() {
+        GlobalScope.launch(Dispatchers.Main) {
+            // Notify the completion callback
+            deferred.complete(0)
+
+            // Delay the destruction of the WebView until it's detached from the window
+            delay(1000) // Adjust the delay as needed
+            webView?.loadData("", "text/html", "utf-8")
+            webView?.clearCache(true)
+            webView?.clearHistory()
+            webView?.destroy()
+        }
     }
 
     @JavascriptInterface

@@ -60,7 +60,7 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         setContentView(R.layout.activity_gam_education)
 
         val accessCodeWebView = findViewById<WebView>(R.id.webView)
-        gamEducationLibrary = GamEducationLibrary(this, this)
+        gamEducationLibrary = GamEducationLibrary( this)
 
         // Example usage:
 
@@ -106,9 +106,49 @@ class MainActivity : Activity(),SharedPreferencesUpdateListener {
         val snakeSegments =
             mutableListOf(snake) // Keep track of the position of each snake segment
         val handler = Handler()
+
+        //CODIGO GAMEDUCATION
+
         val logOffButton = findViewById<Button>(R.id.logOffButton)
 
-        gamEducationLibrary?.setupClearButton(logOffButton)
+        gamEducationLibrary?.setupClearButton(logOffButton){
+            runOnUiThread {
+                setContentView(R.layout.activity_gam_education)
+                val accessCodeWebView = findViewById<WebView>(R.id.webView)
+                gamEducationLibrary?.showAccessCodeInputPage(
+                    accessCodeWebView,
+                    object : GamEducationLibrary.AccessCodeCallback {
+                        override fun onSuccess(accessCode: Boolean) {
+                            comecarJogo(context)
+                        }
+
+                        override fun onFailure() {
+                            // Handle failure
+                        }
+                    })
+            }
+        }
+
+        gamEducationLibrary?.startPeriodicAccessCodeCheck { accessCodeValid ->
+            if(!accessCodeValid){
+                runOnUiThread {
+                    setContentView(R.layout.activity_gam_education)
+                    val accessCodeWebView = findViewById<WebView>(R.id.webView)
+                    gamEducationLibrary?.showAccessCodeInputPage(
+                        accessCodeWebView,
+                        object : GamEducationLibrary.AccessCodeCallback {
+                            override fun onSuccess(accessCode: Boolean) {
+                                comecarJogo(context)
+                            }
+
+                            override fun onFailure() {
+                                // Handle failure
+                            }
+                        })
+                }
+            }
+        }
+
 
 
         val sharedPreferences = getSharedPreferences("DadosGuardadosPeloJogo", Context.MODE_PRIVATE)
